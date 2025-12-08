@@ -1,0 +1,12 @@
+# Example config for embedding extraction
+data_root: data/processed/deepfashion2_shop_clean
+backbone: efficientnet_b0
+# Use the trained EfficientNet-B0 checkpoint from the experiment run
+checkpoint: experiments/training_efficientnet_b0/best_model.pth
+split: train
+batch_size: 128
+num_workers: 4
+image_size: 224
+crop: center
+save_format: pt
+seed: 42

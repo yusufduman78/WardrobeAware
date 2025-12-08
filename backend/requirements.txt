@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+pandas
+numpy
+scikit-learn
+sentence-transformers
+chromadb
+python-jose[cryptography]
+passlib[bcrypt]
+argon2-cffi
+python-multipart
+requests

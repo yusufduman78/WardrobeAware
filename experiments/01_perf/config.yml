@@ -1,0 +1,39 @@
+# Performance Profiling Configuration
+# This file contains all the configuration parameters for performance profiling
+
+# Model Configuration
+model_name: "resnet18"  # Options: resnet18, resnet50, efficientnet_b0
+input_size: 224
+num_classes: 50  # Will be updated based on actual dataset
+
+# Data Loading Configuration
+batch_size: 32
+num_workers: 4
+pin_memory: true
+persistent_workers: true
+augmentation_strength: "medium"  # Options: light, medium, heavy
+
+# Profiling Configuration
+profile_batches: 100  # Number of batches to profile for data loading
+warmup_batches: 10    # Number of warmup batches
+inference_batches: 100  # Number of batches for inference profiling
+memory_batches: 10    # Number of batches for memory profiling
+training_epochs: 1     # Number of epochs for training profiling
+
+# Training Configuration
+learning_rate: 0.001
+mixed_precision: false  # Whether to use mixed precision training
+
+# Hardware Configuration
+device: "auto"  # Options: auto, cpu, cuda
+gpu_memory_fraction: 1.0  # Fraction of GPU memory to use (0.0 to 1.0)
+
+# Output Configuration
+save_plots: true
+save_detailed_logs: true
+verbose: true
+
+# Experiment Configuration
+experiment_name: "performance_forecast"
+description: "Performance profiling for fashion recommendation system"
+tags: ["resnet18", "deepfashion", "performance", "benchmark"]
