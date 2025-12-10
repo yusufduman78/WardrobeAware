@@ -21,8 +21,7 @@ app.add_middleware(
 )
 
 # Mount Polyvore Images
-# Assuming data/polyvore_outfits/images exists
-IMAGES_DIR = Path(__file__).parent.parent / "data" / "polyvore_outfits" / "images"
+from backend.config import IMAGES_DIR
 
 
 if IMAGES_DIR.exists():

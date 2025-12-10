@@ -5,8 +5,23 @@ import os
 from pathlib import Path
 
 # Base paths
-BASE_DIR = Path(__file__).parent.parent
-DATA_DIR = BASE_DIR / "data" / "polyvore_outfits"
+# Base paths
+BASE_DIR = Path(__file__).resolve().parent.parent
+import sys
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
+
+try:
+    from backend import config as backend_config
+    DATA_DIR = backend_config.DATA_ROOT
+    METADATA_PATH = backend_config.METADATA_PATH
+    IMAGE_DIR = backend_config.IMAGES_DIR
+except ImportError:
+    print("Warning: Could not import backend.config. Using local path definition.")
+    DATA_DIR = BASE_DIR / "data" / "polyvore_outfits"
+    METADATA_PATH = DATA_DIR / "polyvore_item_metadata.json"
+    IMAGE_DIR = DATA_DIR / "images"
+
 OUTPUT_DIR = BASE_DIR / "experiments" / "outputs"
 MODELS_DIR = BASE_DIR / "models"
 
@@ -15,11 +30,9 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 MODELS_DIR.mkdir(exist_ok=True)
 
 # Dataset paths
-METADATA_PATH = DATA_DIR / "polyvore_item_metadata.json"
 TRAIN_SPLIT_PATH = DATA_DIR / "disjoint" / "train.json"
 TEST_SPLIT_PATH = DATA_DIR / "disjoint" / "test.json"
 VALID_SPLIT_PATH = DATA_DIR / "disjoint" / "valid.json"
-IMAGE_DIR = DATA_DIR / "images"
 COMPATIBILITY_TRAIN_FILE = DATA_DIR / "disjoint" / "compatibility_train.txt"
 
 # Model configuration
