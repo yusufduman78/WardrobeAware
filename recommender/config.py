@@ -4,8 +4,7 @@ from pathlib import Path
 # --- Dosya Yolları ---
 # Absolute path based on this file's location
 # This file is in <project_root>/recommender/config.py
-BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_ROOT = BASE_DIR / "data" / "polyvore_outfits"
+DATA_ROOT = Path(r"C:\Users\ishak\PycharmProjects\fashion-recommender\data\polyvore_outfits")
 
 METADATA_PATH = DATA_ROOT / "polyvore_item_metadata.json"
 IMAGES_ROOT = DATA_ROOT / "images"

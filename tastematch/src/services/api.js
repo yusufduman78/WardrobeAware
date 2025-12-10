@@ -1,9 +1,9 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import Config from '../../constants/Config';
 
-// REPLACE WITH YOUR COMPUTER'S LAN IP (e.g., http://192.168.1.5:8000)
-// For Android Emulator, use 'http://10.0.2.2:8000'
-const API_URL = 'http://10.19.206.138:8000';
+// API Configuration is managed in ../constants/Config.ts
+const { API_URL } = Config;
 
 const api = axios.create({
     baseURL: API_URL,

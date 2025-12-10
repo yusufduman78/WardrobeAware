@@ -1,8 +1,8 @@
 import requests
 import json
 import random
-
-BASE_URL = "http://localhost:8000"
+import config
+BASE_URL = config.BASE_URL
 
 def test_feed():
     print("\n--- Testing /feed ---")

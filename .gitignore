@@ -246,6 +246,17 @@ tastematch/dist/
 tastematch/build/
 tastematch/.expo-shared/
 
+# Force tracking of essential frontend config
+!tastematch/package.json
+!tastematch/tsconfig.json
+!tastematch/babel.config.js
+!tastematch/app/
+!tastematch/components/
+!tastematch/constants/
+!tastematch/hooks/
+!tastematch/src/
+
+
 # Large embedding files
 experiments/outputs/embeddings/
 *.embeddings.npy
