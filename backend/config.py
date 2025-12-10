@@ -8,6 +8,8 @@ PORT = "8000"
 BASE_URL = f"http://{HOST_IP}:{PORT}"
 
 # Data Paths
-DATA_ROOT = Path(r"C:\Users\ishak\PycharmProjects\fashion-recommender\data\polyvore_outfits")
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_ROOT = BASE_DIR / "data" / "polyvore_outfits"
+
 METADATA_PATH = DATA_ROOT / "polyvore_item_metadata.json"
 IMAGES_DIR = DATA_ROOT / "images"

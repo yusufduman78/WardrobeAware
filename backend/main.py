@@ -22,7 +22,9 @@ app.add_middleware(
 
 # Mount Polyvore Images
 # Assuming data/polyvore_outfits/images exists
-IMAGES_DIR = Path(r"C:\Users\ishak\PycharmProjects\fashion-recommender\data\polyvore_outfits\images")
+IMAGES_DIR = Path(__file__).parent.parent / "data" / "polyvore_outfits" / "images"
+
+
 if IMAGES_DIR.exists():
     app.mount("/images", StaticFiles(directory=str(IMAGES_DIR)), name="images")
     print(f"INFO: Images directory mounted at /images from {IMAGES_DIR}")

@@ -6,7 +6,7 @@ from pathlib import Path
 
 # Base paths
 BASE_DIR = Path(__file__).parent.parent
-DATA_DIR = Path(r"C:\Users\ishak\PycharmProjects\fashion-recommender\data\polyvore_outfits")
+DATA_DIR = BASE_DIR / "data" / "polyvore_outfits"
 OUTPUT_DIR = BASE_DIR / "experiments" / "outputs"
 MODELS_DIR = BASE_DIR / "models"
 
