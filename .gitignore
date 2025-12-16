@@ -237,7 +237,11 @@ models/projection_model.pth
 
 # User uploads (contains user data)
 data/polyvore_outfits/images/user_uploads/
+backend/images/
 *.segmented.png
+*.log
+*.err
+*.out
 
 # Node modules and frontend build files
 tastematch/node_modules/

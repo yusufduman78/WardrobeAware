@@ -118,7 +118,7 @@ def load_category_classifier():
             fclip_classifier_path = Path(__file__).parent.parent.parent / "models" / "fclip_category_classifier.pth"
             fclip_label_encoder_path = Path(__file__).parent.parent.parent / "models" / "fclip_category_label_encoder.pkl"
             
-            if fclip_classifier_path.exists() and fclip_label_encoder_path.exists():
+            if fclip_classifier_path.exists():
                 # Load FashionCLIP classifier
                 checkpoint = torch.load(fclip_classifier_path, map_location='cpu')
                 num_categories = checkpoint['num_categories']
@@ -143,8 +143,18 @@ def load_category_classifier():
                 }
                 _category_classifier['classifier'].to(_category_classifier['device'])
                 
-                with open(fclip_label_encoder_path, 'rb') as f:
-                    _category_label_encoder = pickle.load(f)
+                if fclip_label_encoder_path.exists():
+                    with open(fclip_label_encoder_path, 'rb') as f:
+                        _category_label_encoder = pickle.load(f)
+                    print(f"FashionCLIP label encoder loaded from {fclip_label_encoder_path}")
+                else:
+                    print("Label encoder file not found, generating from metadata...")
+                    from sklearn.preprocessing import LabelEncoder
+                    all_categories = [data.get('semantic_category') for data in METADATA.values() if data.get('semantic_category')]
+                    unique_categories = sorted(list(set(all_categories)))
+                    _category_label_encoder = LabelEncoder()
+                    _category_label_encoder.fit(unique_categories)
+                    print(f"Generated label encoder with {len(unique_categories)} categories")
                 
                 print(f"FashionCLIP category classifier loaded from {fclip_classifier_path}")
                 print(f"  Categories: {len(_category_label_encoder.classes_)}")
@@ -397,7 +407,8 @@ CATEGORY_TO_BASE = {
     "sandals": "shoes",
     
     # All body (counts as both tops and bottoms)
-    "all_body": "both",  # Special case
+    "all_body": "both",  # Code format
+    "all-body": "both",  # Metadata format
     "dresses": "both",
     "jumpsuits": "both",
     "rompers": "both",
@@ -421,26 +432,34 @@ def get_base_category(category: str) -> List[str]:
         return [base]
     
     # Check if category contains keywords
-    if any(keyword in category_lower for keyword in ["top", "shirt", "blouse", "sweater", "jacket", "outer"]):
+    # PRIORITIZE "body", "dress", "suit" to avoid misclassification
+    if any(keyword in category_lower for keyword in ["dress", "jumpsuit", "romper", "all_body", "all-body", "suit"]):
+        return ["tops", "bottoms"]
+        
+    if any(keyword in category_lower for keyword in ["top", "shirt", "blouse", "sweater", "jacket", "outer", "coat", "cardigan"]):
         return ["tops"]
     if any(keyword in category_lower for keyword in ["bottom", "pant", "jean", "short", "skirt", "trouser"]):
         return ["bottoms"]
     if any(keyword in category_lower for keyword in ["shoe", "sneaker", "boot", "heel", "sandal"]):
         return ["shoes"]
-    if any(keyword in category_lower for keyword in ["dress", "jumpsuit", "romper", "all_body"]):
-        return ["tops", "bottoms"]
     
     # Default: return empty (not a base category)
     return []
 
-def get_items_for_base_category(base_cat: str) -> List[str]:
+def get_items_for_base_category(base_cat: str, exclude_mixed: bool = False) -> List[str]:
     """
     Get all item IDs that belong to a base category.
+    If exclude_mixed is True, excludes items that belong to multiple base categories (e.g. all-body/dresses).
     """
     items = []
     for category, item_ids in CATEGORY_GROUPS.items():
         base_cats = get_base_category(category)
+        
+        # Check if it matches the requested base category
         if base_cat in base_cats:
+            # If exclusion requested, skip if it's a "mixed" category (has >1 base cat, e.g. tops AND bottoms)
+            if exclude_mixed and len(base_cats) > 1:
+                continue
             items.extend(item_ids)
     return items
 
@@ -471,8 +490,6 @@ async def complete_outfit(request: OutfitCompletionRequest):
     item_id = str(request.item_id)  # Ensure string type
     
     print(f"[OUTFIT/COMPLETE] Received request for item_id: {item_id} (type: {type(item_id)})")
-    print(f"[OUTFIT/COMPLETE] Metadata keys count: {len(METADATA)}")
-    print(f"[OUTFIT/COMPLETE] Item in metadata: {item_id in METADATA}")
     
     # Check if this is an uploaded image (UUID format or in user_uploads)
     is_uploaded_image = False
@@ -480,6 +497,11 @@ async def complete_outfit(request: OutfitCompletionRequest):
     uploaded_embedding = None
     extractor = None  # Will be set if uploaded image
     
+    # Define UPLOAD_DIR locally if not global (it seems missing in strict scope)
+    # But usually config imports handle it. Let's rely on standard logic.
+    # UPLOAD_DIR = Path(config.IMAGES_DIR) / "user_uploads" (Reused logic)
+    UPLOAD_DIR = Path(config.IMAGES_DIR) / "user_uploads"
+
     if item_id not in METADATA:
         # Try with different string formats
         item_id_int = None
@@ -544,7 +566,6 @@ async def complete_outfit(request: OutfitCompletionRequest):
             print(f"[OUTFIT/COMPLETE] Category not confirmed, predicting category for uploaded image...")
             input_cat = predict_category_for_uploaded_image(uploaded_embedding, model, extractor)
             print(f"[OUTFIT/COMPLETE] Predicted category: {input_cat}")
-            print(f"[OUTFIT/COMPLETE] WARNING: Category not confirmed by user. Consider calling /wardrobe/update_category first.")
     else:
         input_cat = ID_TO_GROUP.get(item_id)
         if not input_cat:
@@ -553,7 +574,6 @@ async def complete_outfit(request: OutfitCompletionRequest):
         
         if not input_cat:
              # If still no category, we can't use TypeAware model effectively
-             # But let's try to guess or just pick random other categories
              print(f"Warning: No category for {item_id}")
              input_cat = "unknown"
 
@@ -591,26 +611,35 @@ async def complete_outfit(request: OutfitCompletionRequest):
     
     # Step 1: Get recommendations for required base categories (MUST HAVE)
     base_category_recommendations = {}
+    
+    # Check if we should exclude mixed items (dresses/all-body)
+    # If input is a top or bottom, we typically want the counterpart to be a pure item, not a dress.
+    should_exclude_mixed = "tops" in input_base_cats or "bottoms" in input_base_cats
+    
     for base_cat in required_base_cats:
         print(f"\n{'='*80}")
         print(f"[OUTFIT/COMPLETE] Processing REQUIRED base category: {base_cat}")
+        print(f"[OUTFIT/COMPLETE] Exclude mixed (dresses): {should_exclude_mixed}")
         print(f"{'='*80}")
         
         # Get all items in this base category
-        base_cat_items = get_items_for_base_category(base_cat)
+        base_cat_items = get_items_for_base_category(base_cat, exclude_mixed=should_exclude_mixed) 
         if not base_cat_items:
-            print(f"[OUTFIT/COMPLETE] No items found for base category: {base_cat}")
-            continue
-        
+             print(f"[OUTFIT/COMPLETE] No items found for base category: {base_cat}")
+             continue
+             
         # Sample candidates (more samples for better results)
         sample_size = min(20, len(base_cat_items))
         sample_candidates = random.sample(base_cat_items, sample_size)
+    
+    # ... logic continues below ...
         
         print(f"[OUTFIT/COMPLETE] Sampling {sample_size} candidates from {len(base_cat_items)} items")
         
         scored_candidates = []
         
-        if is_uploaded_image and uploaded_embedding is not None and uploaded_projected is not None:
+        # Branch 1: Uploaded Image + Projection Model (Batch efficient)
+        if is_uploaded_image and uploaded_projected is not None:
             # Uploaded image: Use pre-projected embedding (already computed above)
             # Get all candidate embeddings at once
             candidate_embeddings = []
@@ -644,23 +673,55 @@ async def complete_outfit(request: OutfitCompletionRequest):
                         "distance": float(dist)
                     })
             else:
-                print(f"[WARNING] No embeddings found for any candidate in {base_cat}")
-        elif is_uploaded_image and model.model_type != "Projection":
-            # ResNet model - use predict_compatibility
-            for cand_id in sample_candidates:
-                try:
-                    dist = model.predict_compatibility(item_id, cand_id)
-                    score = model.predict_similarity_score(item_id, cand_id)
-                    scored_candidates.append({
+                 print(f"[WARNING] No embeddings found for any candidate in {base_cat}")
+
+        # Branch 2: Uploaded Image + ResNet Model (Batch Processing)
+        elif is_uploaded_image:
+            # Optimised Batch Processing for ResNet
+            
+            print(f"[OUTFIT/COMPLETE] Running Batch Prediction for {len(sample_candidates)} candidates...")
+            
+            try:
+                # Call the new batch method
+                batch_results = model.predict_batch_compatibility(
+                    anchor_id=item_id,
+                    candidate_ids=sample_candidates,
+                    anchor_category=input_cat,
+                    anchor_image_path=str(uploaded_image_path)
+                )
+                
+                # Process results
+                for cand_id, dist, score in batch_results:
+                     scored_candidates.append({
                         "item_id": cand_id,
                         "score": score,
                         "distance": dist
                     })
-                except Exception as e:
-                    print(f"[ERROR] Failed to score candidate {cand_id}: {e}")
-                    continue
+                    
+                print(f"[OUTFIT/COMPLETE] Batch processing finished. Scored {len(scored_candidates)} items.")
+
+            except Exception as e:
+                print(f"[ERROR] Batch processing failed: {e}. Falling back to loop.")
+                # Fallback to loop if batch fails (resilience)
+                overrides = {
+                    "category_1": input_cat,
+                    "image_path_1": str(uploaded_image_path)
+                }
+                for cand_id in sample_candidates:
+                    try:
+                        dist = model.predict_compatibility(item_id, cand_id, **overrides)
+                        score = model.predict_similarity_score(item_id, cand_id, **overrides)
+                        scored_candidates.append({
+                            "item_id": cand_id,
+                            "score": score,
+                            "distance": dist
+                        })
+                    except:
+                        continue
+
+        # Branch 3: Existing Metadata Item (Standard)
         else:
-            # Regular metadata item - use fast path
+            # Regular metadata item or Projection model without upload
             for cand_id in sample_candidates:
                 try:
                     dist = model.predict_compatibility(item_id, cand_id)
@@ -671,7 +732,7 @@ async def complete_outfit(request: OutfitCompletionRequest):
                         "distance": dist
                     })
                 except Exception as e:
-                    print(f"[ERROR] Failed to score candidate {cand_id}: {e}")
+                    # print(f"[ERROR] Failed to score candidate {cand_id}: {e}")
                     continue
         
         # Sort and take best
@@ -683,15 +744,43 @@ async def complete_outfit(request: OutfitCompletionRequest):
     
     # Step 2: Get recommendations for other categories (OPTIONAL, threshold-based)
     all_cats = list(CATEGORY_GROUPS.keys())
-    other_cats = [c for c in all_cats if c != input_cat and get_base_category(c) == []]  # Non-base categories
     
+    # Filter categories to avoid logical conflicts
+    valid_other_cats = []
+    
+    # Logic Rules:
+    # 1. If input is Top or Bottom, DO NOT recommend "all-body" (dresses)
+    has_top_or_bottom = "tops" in input_base_cats or "bottoms" in input_base_cats
+    
+    # 2. If input is All-Body, DO NOT recommend independent Tops or Bottoms (already handled by base logic, but good double check)
+    is_all_body = "tops" in input_base_cats and "bottoms" in input_base_cats
+    
+    for c in all_cats:
+        if c == input_cat:
+            continue
+            
+        c_base = get_base_category(c)
+        
+        # Skip if it is a base category (tops/bottoms/shoes) - we already handled those in Step 1
+        if c_base:
+            # Special check for all-body items appearing in "other" pass
+            if "tops" in c_base and "bottoms" in c_base:
+                # This is an all-body item (dress)
+                if has_top_or_bottom:
+                    # Conflict: Don't recommend dress if we have a top/bottom anchor
+                    continue
+            continue
+            
+        # If we reached here, it's a true "other" category (accessory, bag, etc)
+        valid_other_cats.append(c)
+
     print(f"\n{'='*80}")
     print(f"[OUTFIT/COMPLETE] Processing OTHER categories (threshold: {OTHER_CATEGORY_THRESHOLD})")
-    print(f"[OUTFIT/COMPLETE] Found {len(other_cats)} other categories")
+    print(f"[OUTFIT/COMPLETE] Found {len(valid_other_cats)} other categories (filtered from {len(all_cats)})")
     print(f"{'='*80}")
     
     other_recommendations = []
-    for cat in other_cats:
+    for cat in valid_other_cats:
         candidates = CATEGORY_GROUPS[cat]
         total_candidates_in_category = len(candidates)
         # Pick random candidates to score (e.g., 10 per category)
@@ -745,11 +834,16 @@ async def complete_outfit(request: OutfitCompletionRequest):
             else:
                 print(f"[WARNING] No embeddings found for any candidate in {cat}")
         elif is_uploaded_image and model.model_type != "Projection":
-            # ResNet model - use predict_compatibility
+            # ResNet model - use predict_compatibility with overrides
+            overrides = {
+                "category_1": input_cat,
+                "image_path_1": str(uploaded_image_path)
+            }
+            
             for idx, cand_id in enumerate(sample_candidates, 1):
                 try:
-                    dist = model.predict_compatibility(item_id, cand_id)
-                    score = model.predict_similarity_score(item_id, cand_id)
+                    dist = model.predict_compatibility(item_id, cand_id, **overrides)
+                    score = model.predict_similarity_score(item_id, cand_id, **overrides)
                     print(f"[CANDIDATE {idx:2d}/{sample_size}] ID: {cand_id:12s} | Distance: {dist:8.4f} | Score: {score:6.2f}%")
                     scored_candidates.append({
                         "item_id": cand_id,
