@@ -47,19 +47,39 @@ A full-stack fashion recommendation system that uses deep learning to understand
 
 ### 1️⃣ Top-Based Recommendations
 **Scenario:** User uploads a top (upper body) item vs AI suggests matching bottoms and shoes.
-<!-- Drag/Upload your video here -->
+
+
+
+https://github.com/user-attachments/assets/2a65f1d7-9bd9-4c25-b676-727221971756
+
+
 
 ### 2️⃣ Bottom-Based Recommendations
 **Scenario:** User uploads a bottom (lower body) item vs AI suggests matching tops and shoes.
-<!-- Drag/Upload your video here -->
+
+
+https://github.com/user-attachments/assets/195471da-5bbc-4010-90cb-05e7fe2ce13e
+
+
 
 ### 3️⃣ Dataset-Based Outfit Creation
 **Scenario:** Selecting an existing item from the catalog to build a complete outfit.
-<!-- Drag/Upload your video here -->
+
+
+
+https://github.com/user-attachments/assets/0ccddf9d-e498-4600-8d58-25fcad018835
+
+
 
 ### 4️⃣ Smart Combinations from Likes
 **Scenario:** Generating unique outfits based on items liked in the Discover/Smart Feed.
-<!-- Drag/Upload your video here -->
+
+
+
+
+https://github.com/user-attachments/assets/d52bb956-95b6-4f70-af30-8e0a8d108ec7
+
+
 
 ## 🏗️ Architecture
 
