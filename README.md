@@ -11,6 +11,53 @@ A full-stack fashion recommendation system that uses deep learning to understand
 - **Style Combinations**: Generate complete outfits based on user preferences
 - **User Interactions**: Like/swipe system to build personalized taste profiles
 
+## 📸 Application Gallery
+
+<div align="center">
+
+### 📱 Core Experience
+
+| **Smart Discovery** | **Digital Wardrobe** |
+|:---:|:---:|
+| <img src="assets/discoverpage.jpeg" width="300" alt="Discover Page"> | <img src="assets/wardrobepage.jpeg" width="300" alt="Wardrobe Page"> |
+| *Personalized feed based on your taste* | *Manage your collection in one place* |
+
+### 📤 Upload & AI Analysis
+
+| **User Upload** | **Outfit Summary** |
+|:---:|:---:|
+| <img src="assets/useruploadphoto.png" width="300" alt="User Upload"> | <img src="assets/outfitsummary.png" width="300" alt="Outfit Summary"> |
+| *Upload real photos with auto-segmentation* | *Detailed breakdown of your outfit* |
+
+### 🤖 Intelligent Recommendations
+
+| **Compatibility Matching** | **Style Combinations** |
+|:---:|:---:|
+| <img src="assets/exampleofcompatibleitemfinding.png" width="500" alt="Compatible Matching"> | <img src="assets/top5combination.png" width="500" alt="Top Combinations"> |
+| *Finding the perfect match for your item* | *Generated full outfit suggestions* |
+
+</div>
+
+## 🎥 Feature Demos
+
+> *Videos showcasing the AI capabilities in real-time.*
+
+### 1️⃣ Top-Based Recommendations
+**Scenario:** User uploads a top (upper body) item vs AI suggests matching bottoms and shoes.
+<!-- Drag/Upload your video here -->
+
+### 2️⃣ Bottom-Based Recommendations
+**Scenario:** User uploads a bottom (lower body) item vs AI suggests matching tops and shoes.
+<!-- Drag/Upload your video here -->
+
+### 3️⃣ Dataset-Based Outfit Creation
+**Scenario:** Selecting an existing item from the catalog to build a complete outfit.
+<!-- Drag/Upload your video here -->
+
+### 4️⃣ Smart Combinations from Likes
+**Scenario:** Generating unique outfits based on items liked in the Discover/Smart Feed.
+<!-- Drag/Upload your video here -->
+
 ## 🏗️ Architecture
 
 ### Backend (FastAPI)
