@@ -3,7 +3,7 @@ from pathlib import Path
 
 # Centralized Configuration
 # Change this IP to your machine's LAN IP
-HOST_IP = "192.168.1.153" 
+HOST_IP = "192.168.1.7" 
 PORT = "8000"
 BASE_URL = f"http://{HOST_IP}:{PORT}"
 
