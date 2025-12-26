@@ -2,6 +2,9 @@
 
 A full-stack fashion recommendation system that uses deep learning to understand outfit compatibility and provide personalized style recommendations. The system allows users to upload their own clothing items, automatically segments them, classifies categories, and generates complete outfit combinations.
 
+> [!NOTE] 
+> This repository is a refined and structured version of our original project work, specifically organized for final course submission. The development history and initial experimental phases can be found in our **[original development repository](https://github.com/isobed18/fashion-recommender)**.
+
 ## 🎯 Features
 
 - **Smart Feed**: Browse fashion items with AI-powered recommendations
